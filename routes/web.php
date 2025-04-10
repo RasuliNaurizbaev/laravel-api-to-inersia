@@ -11,9 +11,9 @@ Route::get('/test', function () {
     ]);
 });
 
-
+// Routes protected by Sanctum authentication
 Route::middleware(["auth:sanctum"])->group(function(){
-    //User
+    // User Routes
     Route::get("/users", [UserController::class, "getAllUser"]);
     Route::get("/user/{id}", [UserController::class, "getUserByID"]);
     Route::put("/user/{id}", [UserController::class, "update"]);
@@ -21,7 +21,7 @@ Route::middleware(["auth:sanctum"])->group(function(){
     
     Route::post("/logout", [UserController::class, "logout"]);
     
-    //Todo
+    // Todo Routes (API endpoints)
     Route::get('/todos', [TodoController::class, 'getPosts']);
     Route::get('/todos/{id}', [TodoController::class, 'getByIDPost']);
     Route::post('/todos', [TodoController::class, 'post']);
@@ -29,15 +29,13 @@ Route::middleware(["auth:sanctum"])->group(function(){
     Route::patch('/todos/{id}', [TodoController::class, 'updatePost']);
     Route::delete('/todos/{id}', [TodoController::class, 'deletePost']);
 
-    //Dashboard
-    Route::get("/dashboard", function () {
-        return Inertia::render("Home");
-    });
+    // Dashboard (Inertia view)
+    Route::get("/dashboard", [TodoController::class,"dashboard"]);
 });
 
+// Public Routes for authentication
 Route::post("/register", [UserController::class, "registerUser"]);
 Route::post("/login", [UserController::class, "login"]);
-
 
 Route::get("/register", function () {
     return Inertia::render("Register");
