@@ -11,50 +11,51 @@ use Illuminate\Support\Facades\Auth;
 class UserController extends Controller
 {
     public function registerUser(Request $request){
+        /* 
+        Validation
+        */
         $validated = $request->validate([
-            "name" => "required|string",
-            "email" => "required|email|unique:users",
-            "password" => "required|min:6"	
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|min:6',
         ]);
-    
+
+        /*
+        Database Insert
+        */
         $user = User::create($validated);
-        $token = $user->createToken("secret-token")->plainTextToken;
-        // return response()->json(["message" => "User is created", $user, $token], 201);
+
+        Auth::login($user);
+
         return redirect("/dashboard");
     }
     
     
     public function login(Request $request)
-{
-    $credentials = $request->only('email', 'password');
+    {
+        $credentials = $request->only('email', 'password');
 
-    // Проверка пользователя
-    $user = User::where('email', $credentials['email'])->first();
+        // Проверка пользователя
+        $user = User::where('email', $credentials['email'])->first();
 
-    if (!$user || !Hash::check($credentials['password'], $user->password)) {
+        if (Auth::attempt($credentials)) {
+            $request -> session()->regenerate();
+            return redirect("/dashboard");
+        }
+
         return back()->withErrors(['email' => 'Invalid credentials'])->withInput();
     }
 
-    // Логиним через Laravel Auth
-    Auth::login($user);
-
-    // Не нужен токен, если мы не используем API-авторизацию
-    return redirect()->route('dashboard')->with([
-        'message' => 'User successfully logged in'
-    ]);
-}
-
-public function logout()
-{
-    if (Auth::check()) {
-        Auth::user()->tokens()->delete(); // На случай, если хочешь токены удалить при выходе
-        Auth::logout();
+    public function logout(Request $request)
+    {
+        auth()->guard('web')->logout();
+        
+        $request->user()->tokens()->delete();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect("/");
     }
-
-    return redirect()->route('login')->with([
-        'message' => 'User successfully logged out'
-    ]);
-}
     
     public function getUserByID(Request $request, $id){
         $user = User::find($id);
